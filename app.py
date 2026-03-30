@@ -5,13 +5,13 @@ app = Flask(__name__)
 # ══════════════════════════════════════════════════════════
 # State
 # ══════════════════════════════════════════════════════════
-camera_active = False
+camera_active    = False
 current_schedule = {}
+last_habit       = "unknown"
 
 # ══════════════════════════════════════════════════════════
 # ESP32 Routes
 # ══════════════════════════════════════════════════════════
-
 @app.route('/person_detected', methods=['POST'])
 def person_detected():
     global camera_active
@@ -33,25 +33,34 @@ def absence_alert():
     print("[!] Absence alert received")
     return jsonify({"received": True})
 
+# ESP32 reads habit from here
+@app.route('/get_habit', methods=['GET'])
+def get_habit():
+    global last_habit
+    habit      = last_habit
+    last_habit = "unknown"  # reset after ESP32 reads it
+    return jsonify({"habit": habit})
+
 # ══════════════════════════════════════════════════════════
 # Python AI Routes
 # ══════════════════════════════════════════════════════════
-
 @app.route('/camera_status', methods=['GET'])
 def camera_status():
     return jsonify({"active": camera_active})
 
+# Python AI sends habit here
 @app.route('/habit_result', methods=['POST'])
-def habit_result():
-    data  = request.json
-    habit = data.get("habit", "unknown")
-    print(f"[+] Habit received: {habit}")
-    return jsonify({"habit": habit})
+def receive_habit():
+    global camera_active, last_habit
+    data       = request.json
+    last_habit = data.get("habit", "unknown")
+    camera_active = False  # reset after habit received
+    print(f"[+] Habit received: {last_habit}")
+    return jsonify({"habit": last_habit})
 
 # ══════════════════════════════════════════════════════════
 # Mobile App Routes
 # ══════════════════════════════════════════════════════════
-
 @app.route('/update_schedule', methods=['POST'])
 def update_schedule():
     global current_schedule
