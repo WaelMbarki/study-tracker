@@ -22,10 +22,14 @@ def person_detected():
 @app.route('/get_habit', methods=['GET'])
 def get_habit():
     global last_habit, camera_active
-    if last_habit != "unknown":
-        camera_active = False  # reset only when real habit is read
-    return jsonify({"habit": last_habit})
 
+    habit = last_habit  # store current value
+
+    if last_habit != "unknown":
+        camera_active = False
+        last_habit = "unknown"   # ✅ RESET AFTER READ
+
+    return jsonify({"habit": habit})
 @app.route('/session_ended', methods=['POST'])
 def session_ended():
     global camera_active, last_habit
