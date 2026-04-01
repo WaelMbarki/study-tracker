@@ -32,7 +32,10 @@ def session_ended():
 # ESP32 polls this to get habit from AI
 @app.route('/get_habit', methods=['GET'])
 def get_habit():
-    return jsonify({"habit": last_habit})
+    global last_habit
+    habit      = last_habit
+    last_habit = "unknown"  # reset after reading
+    return jsonify({"habit": habit})
 
 # ══════════════════════════════════════════════════════════
 # AI → API
