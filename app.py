@@ -26,12 +26,10 @@ def session_ended():
     print("[+] Session ended → Camera CLOSE")
     return jsonify({"action": "close_camera"})
 
-@app.route('/absence_alert', methods=['POST'])
-def absence_alert():
-    global camera_active
-    camera_active = False
-    print("[!] Absence alert received")
-    return jsonify({"received": True})
+@app.route('/get_habit', methods=['GET'])
+def get_habit():
+    global last_habit
+    return jsonify({"habit": last_habit})  # don't reset here!
 
 # ESP32 reads habit from here
 @app.route('/get_habit', methods=['GET'])
@@ -54,7 +52,7 @@ def receive_habit():
     global camera_active, last_habit
     data       = request.json
     last_habit = data.get("habit", "unknown")
-    camera_active = False  # reset after habit received
+    camera_active = False
     print(f"[+] Habit received: {last_habit}")
     return jsonify({"habit": last_habit})
 
