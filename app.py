@@ -19,26 +19,28 @@ def person_detected():
     print("[+] Person detected → Camera OPEN")
     return jsonify({"action": "open_camera"})
 
+@app.route('/get_habit', methods=['GET'])
+def get_habit():
+    global last_habit, camera_active
+    if last_habit != "unknown":
+        camera_active = False  # reset only when real habit is read
+    return jsonify({"habit": last_habit})
+
 @app.route('/session_ended', methods=['POST'])
 def session_ended():
-    global camera_active
+    global camera_active, last_habit
     camera_active = False
+    last_habit    = "unknown"  # reset for next session
     print("[+] Session ended → Camera CLOSE")
     return jsonify({"action": "close_camera"})
 
-@app.route('/get_habit', methods=['GET'])
-def get_habit():
-    global last_habit
-    return jsonify({"habit": last_habit})  # don't reset here!
-
-# ESP32 reads habit from here
-@app.route('/get_habit', methods=['GET'])
-def get_habit():
-    global last_habit
-    habit      = last_habit
-    last_habit = "unknown"  # reset after ESP32 reads it
-    return jsonify({"habit": habit})
-
+@app.route('/absence_alert', methods=['POST'])
+def absence_alert():
+    global camera_active, last_habit
+    camera_active = False
+    last_habit    = "unknown"  # reset for next session
+    print("[!] Absence alert received")
+    return jsonify({"received": True})
 # ══════════════════════════════════════════════════════════
 # Python AI Routes
 # ══════════════════════════════════════════════════════════
