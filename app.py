@@ -5,76 +5,52 @@ app = Flask(__name__)
 # ══════════════════════════════════════════════════════════
 # State
 # ══════════════════════════════════════════════════════════
-camera_active    = False
-current_schedule = {}
-last_habit       = "unknown"
+camera_active = False
+last_habit    = "unknown"
 
 # ══════════════════════════════════════════════════════════
-# ESP32 Routes
+# ESP32 → API
 # ══════════════════════════════════════════════════════════
+
+# ESP32 calls this when person is detected
 @app.route('/person_detected', methods=['POST'])
 def person_detected():
     global camera_active
     camera_active = True
-    print("[+] Person detected → Camera OPEN")
-    return jsonify({"action": "open_camera"})
+    print("[+] Person detected → AI should start")
+    return jsonify({"status": "ok"})
 
-@app.route('/get_habit', methods=['GET'])
-def get_habit():
-    global last_habit, camera_active
-
-    habit = last_habit  # store current value
-
-    if last_habit != "unknown":
-        camera_active = False
-        last_habit = "unknown"   # ✅ RESET AFTER READ
-
-    return jsonify({"habit": habit})
+# ESP32 calls this when session ends
 @app.route('/session_ended', methods=['POST'])
 def session_ended():
     global camera_active, last_habit
     camera_active = False
-    last_habit    = "unknown"  # reset for next session
-    print("[+] Session ended → Camera CLOSE")
-    return jsonify({"action": "close_camera"})
+    last_habit    = "unknown"
+    print("[+] Session ended → AI should stop")
+    return jsonify({"status": "ok"})
 
-@app.route('/absence_alert', methods=['POST'])
-def absence_alert():
-    global camera_active, last_habit
-    camera_active = False
-    last_habit    = "unknown"  # reset for next session
-    print("[!] Absence alert received")
-    return jsonify({"received": True})
+# ESP32 polls this to get habit from AI
+@app.route('/get_habit', methods=['GET'])
+def get_habit():
+    return jsonify({"habit": last_habit})
+
 # ══════════════════════════════════════════════════════════
-# Python AI Routes
+# AI → API
 # ══════════════════════════════════════════════════════════
+
+# AI polls this to know if it should work
 @app.route('/camera_status', methods=['GET'])
 def camera_status():
     return jsonify({"active": camera_active})
 
-# Python AI sends habit here
+# AI sends result here
 @app.route('/habit_result', methods=['POST'])
-def receive_habit():
-    global camera_active, last_habit
+def habit_result():
+    global last_habit
     data       = request.json
     last_habit = data.get("habit", "unknown")
-    camera_active = False
-    print(f"[+] Habit received: {last_habit}")
-    return jsonify({"habit": last_habit})
-
-# ══════════════════════════════════════════════════════════
-# Mobile App Routes
-# ══════════════════════════════════════════════════════════
-@app.route('/update_schedule', methods=['POST'])
-def update_schedule():
-    global current_schedule
-    current_schedule = request.json
-    print("[*] Schedule updated by mobile app")
-    return jsonify({"updated": True})
-
-@app.route('/get_schedule', methods=['GET'])
-def get_schedule():
-    return jsonify(current_schedule)
+    print(f"[+] Habit received from AI: {last_habit}")
+    return jsonify({"status": "ok"})
 
 if __name__ == '__main__':
     import os
