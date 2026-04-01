@@ -52,6 +52,14 @@ def habit_result():
     print(f"[+] Habit received from AI: {last_habit}")
     return jsonify({"status": "ok"})
 
+@app.route('/reset', methods=['POST'])
+def reset():
+    global camera_active, last_habit
+    camera_active = False
+    last_habit    = "unknown"
+    print("[*] State reset!")
+    return jsonify({"status": "reset"})
+
 if __name__ == '__main__':
     import os
     port = int(os.environ.get("PORT", 5000))
